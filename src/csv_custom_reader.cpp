@@ -1,3 +1,4 @@
+#include <ros/ros.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -20,9 +21,15 @@ bool processed_point(Eigen::Vector3d current_point) {
     return processed;
 }
 
-void extracted_orientation(Eigen::Vector3d current_position) {
+void extracted_orientation(Eigen::Vector3d current_position, std::string file_dir, std::string result_dir) {
     std::string x, y, z, ax, ay, az;
-    std::ifstream my_csv_file("/home/ghanim/git/baxter_workspace.csv");
+    std::ostringstream pose;
+    pose << "orientations_for_position_" << current_position(0) << "_" << current_position(1) << "_" << current_position(2);
+    std::string my_file_name = pose.str();
+    std::ofstream current_file;
+    current_file.open(result_dir+my_file_name+".csv");
+    //std::ifstream my_csv_file("/home/ghanim/git/baxter_workspace.csv");
+    std::ifstream my_csv_file(file_dir);
     start_index.push_back(extracted_orientations.size());
     while (std::getline(my_csv_file,x,',')) {
         std::getline(my_csv_file, y, ',') ;
@@ -35,17 +42,27 @@ void extracted_orientation(Eigen::Vector3d current_position) {
         if(current_point == current_position) {
             current_orientation << std::stod(ax), std::stod(ay), std::stod(az);
             extracted_orientations.push_back(current_orientation);
+            current_file << current_orientation(0) << "," << current_orientation(1) << "," << current_orientation(2) << "\n";
         }
     }
+    current_file.close();
     processed_points.push_back(current_position);
     finish_index.push_back(extracted_orientations.size());
 }
 
 int main(int argc, char **argv)
 {
-    std::ifstream my_csv_file("/home/ghanim/git/baxter_workspace.csv");
+    ros::init(argc, argv, "csv_custom_reader");
+    ros::NodeHandle node;
+    std::string csv_file_dir,results_dir;
+    node.getParam("/csv_custom_reader/csv_file_dir", csv_file_dir);
+    node.getParam("/csv_custom_reader/results_directory", results_dir);
+    std::ifstream my_csv_file(csv_file_dir);
     int iteration = 32, counter = 0;
     std::string x, y, z, ax, ay, az;
+
+    std::cout << "csv file directory is: " << csv_file_dir << std::endl;
+    std::cout << "results file directory is: " << results_dir << std::endl;
 
     while (std::getline(my_csv_file,x,',') && counter < iteration) {
         std::cout << "doing iteration no: " << counter << std::endl;
@@ -59,7 +76,7 @@ int main(int argc, char **argv)
         current_point << std::stod(x), std::stod(y), std::stod(z);
         std::cout << "dealing with point: " << std::endl << current_point << std::endl;
         if(!processed_point(current_point)) {
-            extracted_orientation(current_point);
+            extracted_orientation(current_point, csv_file_dir, results_dir);
         }
         counter = counter + 1;
     }

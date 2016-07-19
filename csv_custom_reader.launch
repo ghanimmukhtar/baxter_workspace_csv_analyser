@@ -1,0 +1,6 @@
+<launch>
+    <node name="csv_custom_reader" pkg="csv_custom_reader" type="csv_custom_reader" output="screen">
+        <param name="csv_file_dir" type="string" value="/home/ghanim/git/baxter_workspace.csv"/>
+	<param name="results_directory" type="string" value="/home/ghanim/git/csv_custom_reader/results/"/>
+    </node>
+</launch>
